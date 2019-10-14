@@ -1,27 +1,95 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using System.Net.Sockets;
 using System.Threading;
 
-namespace ChatServer
+namespace ChatClient
 {
     class Program
     {
-        static Server server; // сервер
-        static Thread listenThread; // потока для прослушивания
+        static string userName;
+        private const string host = "192.168.1.33";
+        private const int port = 61354;
+        static TcpClient client;
+        static NetworkStream stream;
+
         static void Main(string[] args)
         {
+            Console.Write("Введите ваше имя:");
+            userName = Console.ReadLine();
+            client = new TcpClient();
             try
             {
-                server = new Server();
-                listenThread = new Thread(new ThreadStart(server.Listen));
-                listenThread.Start(); //старт потока
+                client.Connect(host, port); //подключение клиента
+                stream = client.GetStream(); // получаем поток
+
+                string message = userName;
+                byte[] data = Encoding.Unicode.GetBytes(message);
+                stream.Write(data, 0, data.Length); // запускаем новый поток для получения данных
+                Thread receiveThread = new Thread(new ThreadStart(ReceiveMessage));
+
+                receiveThread.Start(); //старт потока
+                Console.WriteLine("Добро пожаловать, {0}", userName);
+                SendMessage();
             }
             catch (Exception ex)
             {
-                server.Disconnect();
                 Console.WriteLine(ex.Message);
             }
+            finally
+            {
+                Disconnect();
+            }
+
+        }
+        static void SendMessage() // отправка сообщений
+        {
+            Console.WriteLine("Как дела? ");
+
+            while (true)
+            {
+                string message = Console.ReadLine();
+                byte[] data = Encoding.Unicode.GetBytes(message);
+                stream.Write(data, 0, data.Length);
+            }
+        }
+        static void ReceiveMessage() // получение сообщений
+        {
+            while (true)
+            {
+                try
+                {
+                    byte[] data = new byte[64]; // буфер для получаемых данных
+                    StringBuilder builder = new StringBuilder();
+                    int bytes = 0;
+                    do
+                    {
+                        bytes = stream.Read(data, 0, data.Length);
+                        builder.Append(Encoding.Unicode.GetString(data, 0, bytes));
+                    }
+                    while (stream.DataAvailable);
+
+                    string message = builder.ToString();
+                    Console.WriteLine(message);//вывод сообщения
+                }
+                catch
+                {
+                    Console.WriteLine("Подключение прервано!"); //соединение было прервано
+                    Console.ReadLine();
+                    Disconnect();
+                }
+            }
+        }
+        static void Disconnect()
+        {
+            if (stream != null)
+                stream.Close();//отключение потока
+            if (client != null)
+                client.Close();//отключение клиента
+            Environment.Exit(0); //завершение процесса
         }
     }
 }

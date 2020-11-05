@@ -62,7 +62,7 @@ namespace ChatServer
         }
         private string GetMessage()  // чтение входящего сообщения и преобразование в строку
         {
-            byte[] data = new byte[64]; // буфер для получаемых данных
+            byte[] data = new byte[64]; // указываем размер буфера для получаемых данных
             StringBuilder builder = new StringBuilder();
             int bytes = 0;
             do

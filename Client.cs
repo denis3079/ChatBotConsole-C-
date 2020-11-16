@@ -11,7 +11,7 @@ namespace ChatServer
         protected internal NetworkStream Stream { get; private set; }
         string userName;
         TcpClient client;
-        Server server; // объект сервера
+        Server server; // объект - сервера
 
         public Client (TcpClient tcpClient, Server serverObject)
         {
